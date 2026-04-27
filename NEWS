@@ -1,0 +1,27 @@
+php-sfcgal NEWS
+===============
+
+1.0.0 — initial release (target: 2026-Q2)
+  - PHP bindings for SFCGAL 2.2.0 ISO 19107:2013 / OGC SFA 1.2 3D operations
+  - SFCGALGeometry hierarchy (flat global names, matching php-geos style):
+    SFCGALPoint, SFCGALLineString, SFCGALPolygon, SFCGALMultiPoint,
+    SFCGALMultiLineString, SFCGALMultiPolygon, SFCGALGeometryCollection,
+    SFCGALTriangle, SFCGALTriangulatedSurface, SFCGALPolyhedralSurface,
+    SFCGALSolid, SFCGALMultiSolid
+  - SFCGALPreparedGeometry (SRID-bearing wrapper)
+  - I/O: WKT, EWKT, WKB, hex-WKB, OBJ, STL, VTK, binary prepared
+  - 3D predicates: intersects3D, covers3D, isPlanar, isAlmostEquals
+  - 3D measures: area3D, length3D, volume, centroid3D, distance3D, envelope3D
+  - 3D set ops: intersection3D, difference3D, union3D, convexHull3D
+  - Mesh ops: tesselate, extrude, makeSolid, triangulate2DZ
+  - Skeleton family: straightSkeleton, approximateMedialAxis,
+    extrudeStraightSkeleton, extrudePolygonStraightSkeleton,
+    straightSkeletonPartition, offsetPolygon
+  - Buffers: buffer3D (with type enum), minkowskiSum
+  - Alpha: alphaShapes, optimalAlphaShapes, alphaWrapping3D
+  - Visibility: visibilityPoint, visibilitySegment
+  - Transforms: forceZ, forceM, dropZ, dropM, forceLHR, forceRHR, swapXY,
+    rotate*, scale*, translate*, round, simplify, lineSubstring
+  - Partition_2 family
+  - Bridge to/from \GEOS\Geometry via WKB round-trip
+  - Full PHPT/PHPUnit test corpus + ported PostGIS regress/sfcgal/*.sql

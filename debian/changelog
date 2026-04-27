@@ -1,0 +1,26 @@
+php-sfcgal (1.0.0+git20260427-1~jammy1) jammy; urgency=medium
+
+  * Initial release: PHP bindings for SFCGAL 2.2.0.
+    - Flat-namespace classes (matching the php-geos style):
+      SFCGALGeometry (abstract), SFCGALPoint, SFCGALLineString,
+      SFCGALPolygon, SFCGALMultiPoint, SFCGALMultiLineString,
+      SFCGALMultiPolygon, SFCGALGeometryCollection, SFCGALTriangle,
+      SFCGALTriangulatedSurface, SFCGALPolyhedralSurface, SFCGALSolid,
+      SFCGALMultiSolid, SFCGALPreparedGeometry, SFCGALException.
+    - 165+ methods covering OGC SF3D: intersects3D / intersection3D /
+      difference3D / union3D / convexHull3D / distance3D / area3D /
+      length3D / volume / centroid3D / covers3D, plus tesselate,
+      extrude, makeSolid, triangulate2DZ, straightSkeleton family,
+      alphaShapes / optimalAlphaShapes / alphaWrapping3D, buffer3D,
+      visibilityPoint / visibilitySegment, partition_2 family,
+      rotate / scale / translate variants, and full WKT/WKB/EWKT/
+      hex-WKB/OBJ/STL/VTK I/O.
+    - Bridge to/from GEOSGeometry via WKB round-trip; rejects curved
+      types (CircularString / CompoundCurve / CurvePolygon /
+      MultiCurve / MultiSurface) with a hint to call
+      GEOSGeometry::curveToLine() first — same behaviour as PostGIS
+      LWGEOM2SFCGAL.
+    - Built against SFCGAL 2.2.0 + CGAL 6.1.1 on Ubuntu Jammy / PHP 8.1.
+    - 9 .phpt tests; 100 percent green.
+
+ -- Abraham van der Merwe <abz@frogfoot.com>  Mon, 27 Apr 2026 16:00:00 +0200

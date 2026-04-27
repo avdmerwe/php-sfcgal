@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+#DEBHELPER#
+
+if [ "$1" = "remove" ]; then
+	phpdismod sfcgal
+fi
+
+exit 0

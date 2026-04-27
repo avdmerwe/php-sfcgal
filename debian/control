@@ -1,0 +1,35 @@
+Source: php-sfcgal
+Maintainer: Abraham van der Merwe <abz@frogfoot.com>
+Section: php
+Priority: optional
+Build-Depends: debhelper-compat (= 13),
+               dh-php,
+               libsfcgal-dev (>= 2.2.0),
+               libcgal-dev (>= 5.6),
+               php-dev,
+Standards-Version: 4.7.0
+Homepage: https://github.com/avdmerwe/php-sfcgal
+Rules-Requires-Root: no
+
+Package: php-sfcgal
+Architecture: any
+Section: php
+Depends: ${php:Depends},
+         ${shlibs:Depends},
+         ${misc:Depends},
+         libsfcgal2 (>= 2.2.0)
+Recommends: php-geos
+Description: SFCGAL bindings for PHP — ISO 19107 / OGC SFA 1.2 3D
+ SFCGAL is a C++ wrapper library around CGAL that supports
+ ISO 19107:2013 and OGC Simple Features Access 1.2 for 3D operations.
+ It exposes a stable C API used by PostGIS, QGIS and Spatialite.
+ .
+ This package provides PHP bindings for SFCGAL: SFCGALGeometry plus the
+ typed hierarchy (SFCGALPoint / SFCGALLineString / SFCGALPolygon /
+ SFCGALSolid / ...), SFCGALPreparedGeometry and SFCGALException — for
+ the 3D operations that GEOS does not provide (3D distance, intersection,
+ union, difference, volume, tesselation, extrusion, straight skeleton,
+ alpha shapes, alpha-wrapping 3D, Minkowski sums, 3D buffers, ...).
+ .
+ Companion to the php-geos package; bridges to/from GEOSGeometry via
+ WKB round-trip.

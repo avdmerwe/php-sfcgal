@@ -1,0 +1,61 @@
+# Build artefacts (phpize / autotools)
+.libs/
+.deps/
+build/
+modules/
+include/
+config.cache
+config.h
+config.h.in
+config.log
+config.nice
+config.status
+config.sub
+config.guess
+configure
+configure.ac
+configure.in
+acinstall
+aclocal.m4
+autom4te.cache/
+install-sh
+ltmain.sh
+libtool
+mkinstalldirs
+missing
+Makefile
+Makefile.fragments
+Makefile.global
+Makefile.objects
+run-tests.php
+
+# Compiled
+*.o
+*.lo
+*.la
+*.so
+*.dep
+arginfo.h.bak
+
+# Tests
+tests/*.diff
+tests/*.exp
+tests/*.log
+tests/*.out
+tests/*.php.tmp
+tests/*.sh
+
+# Debian build outputs (live in parent dir)
+debian/.debhelper/
+debian/debhelper-build-stamp
+debian/files
+debian/php-sfcgal/
+debian/php-sfcgal.substvars
+debian/tmp/
+debian/*.log
+
+# Editor
+*~
+.*.swp
+.idea/
+.vscode/

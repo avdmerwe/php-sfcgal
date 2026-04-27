@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package packagerversion="1.10.0" version="2.0" xmlns="http://pear.php.net/dtd/package-2.0"
+   xmlns:tasks="http://pear.php.net/dtd/tasks-1.0"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0
+                       http://pear.php.net/dtd/tasks-1.0.xsd
+                       http://pear.php.net/dtd/package-2.0
+                       http://pear.php.net/dtd/package-2.0.xsd">
+    <name>sfcgal</name>
+    <channel>pecl.php.net</channel>
+    <summary>PHP bindings for SFCGAL — ISO 19107:2013 / OGC SFA 1.2 3D operations.</summary>
+    <description>
+        php-sfcgal exposes the SFCGAL C API to PHP as flat global classes
+        (matching the php-geos convention): SFCGALGeometry (abstract),
+        SFCGALPoint, SFCGALLineString, SFCGALPolygon, SFCGALMultiPoint,
+        SFCGALMultiLineString, SFCGALMultiPolygon, SFCGALGeometryCollection,
+        SFCGALTriangle, SFCGALTriangulatedSurface, SFCGALPolyhedralSurface,
+        SFCGALSolid, SFCGALMultiSolid, SFCGALPreparedGeometry, SFCGALException.
+
+        Provides operations that GEOS does not: 3D distance, intersection,
+        union, difference; volume; tesselation; extrusion; straight skeleton;
+        alpha shapes / alpha wrapping 3D; Minkowski sums; 3D buffers; and
+        SRID-aware EWKT round-tripping via SFCGALPreparedGeometry.
+
+        Bridges to/from GEOSGeometry via WKB round-trip. Curved geometry
+        types (CircularString / CompoundCurve / CurvePolygon) throw — call
+        GEOSGeometry::curveToLine() first, mirroring PostGIS behaviour.
+    </description>
+    <lead>
+        <name>Abraham van der Merwe</name>
+        <user>avdmerwe</user>
+        <email>abz@frogfoot.com</email>
+        <active>yes</active>
+    </lead>
+    <date>2026-04-27</date>
+    <version><release>1.0.0</release><api>1.0.0</api></version>
+    <stability><release>beta</release><api>beta</api></stability>
+    <license uri="https://www.gnu.org/licenses/old-licenses/lgpl-2.0.html">LGPL-2.0-or-later</license>
+    <notes>
+        Initial release — see NEWS.
+    </notes>
+    <contents>
+        <dir name="/">
+            <file role="src" name="config.m4"/>
+            <file role="src" name="sfcgal.c"/>
+            <file role="src" name="php_sfcgal.h"/>
+            <file role="src" name="arginfo.h"/>
+            <file role="doc" name="README.md"/>
+            <file role="doc" name="NEWS"/>
+            <file role="doc" name="CREDITS"/>
+            <file role="doc" name="COPYING"/>
+            <file role="doc" name="LICENSE"/>
+            <dir name="tests">
+                <file role="test" name="TestHelper.php"/>
+                <file role="test" name="000_General.phpt"/>
+                <file role="test" name="001_Geometry.phpt"/>
+                <file role="test" name="002_Predicates3D.phpt"/>
+                <file role="test" name="003_Volume.phpt"/>
+                <file role="test" name="004_Factories.phpt"/>
+                <file role="test" name="005_Transforms.phpt"/>
+                <file role="test" name="006_PreparedGeometry.phpt"/>
+                <file role="test" name="007_Errors.phpt"/>
+                <file role="test" name="008_Hierarchy.phpt"/>
+            </dir>
+        </dir>
+    </contents>
+    <dependencies>
+        <required>
+            <php><min>8.1.0</min></php>
+            <pearinstaller><min>1.10.0</min></pearinstaller>
+        </required>
+    </dependencies>
+    <providesextension>sfcgal</providesextension>
+    <extsrcrelease/>
+</package>
