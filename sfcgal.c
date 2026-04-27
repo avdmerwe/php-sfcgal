@@ -119,6 +119,24 @@ PHP_METHOD(Geometry, translate3D);
 PHP_METHOD(Geometry, scale3D);
 PHP_METHOD(Geometry, fromGEOS);
 PHP_METHOD(Geometry, toGEOS);
+PHP_METHOD(Geometry, decomposeToFaces);
+
+/* Forward decl — defined after the wrap helpers because it walks the
+ * SFCGAL hierarchy and is used by toGEOS to bridge 3D-only types. */
+static sfcgal_geometry_t *build_face_multipolygon(const sfcgal_geometry_t *g);
+
+/* php-geos constructors initialise the C relay; object_init_ex alone is
+ * not enough.  Invoke __construct explicitly on a freshly-allocated zval. */
+static int
+php_sfcgal_call_default_ctor(zval *obj)
+{
+    zval method, rv;
+    ZVAL_STRINGL(&method, "__construct", sizeof("__construct") - 1);
+    int r = call_user_function(NULL, obj, &method, &rv, 0, NULL);
+    zval_ptr_dtor(&method);
+    zval_ptr_dtor(&rv);
+    return r;
+}
 
 /* PreparedGeometry methods */
 PHP_METHOD(PreparedGeometry, __construct);
@@ -503,6 +521,7 @@ static const zend_function_entry Geometry_methods[] = {
     PHP_ME(Geometry, scale3D,                 arginfo_Geometry_scale3D,                 ZEND_ACC_PUBLIC)
     PHP_ME(Geometry, fromGEOS,                arginfo_Geometry_fromGEOS,                ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_ME(Geometry, toGEOS,                  arginfo_Geometry_toGEOS,                  ZEND_ACC_PUBLIC)
+    PHP_ME(Geometry, decomposeToFaces,        arginfo_Geometry_decomposeToFaces,        ZEND_ACC_PUBLIC)
 
     /* v1 expansion */
     PHP_ME(Geometry, intersects,              arginfo_Geometry_intersects,              ZEND_ACC_PUBLIC)
@@ -620,6 +639,10 @@ static const zend_function_entry MultiPolygon_methods[] = {
     PHP_ME(MultiPolygon, create, arginfo_GeometryCollection_create, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_FE_END
 };
+static const zend_function_entry MultiSolid_methods[] = {
+    PHP_ME(MultiSolid, create, arginfo_GeometryCollection_create, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+    PHP_FE_END
+};
 
 static const zend_function_entry PolyhedralSurface_methods[] = {
     PHP_ME(PolyhedralSurface, create,     arginfo_PolyhedralSurface_create,     ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
@@ -686,16 +709,28 @@ PHP_MINIT_FUNCTION(sfcgal)
     SFCGAL_REG_SUBCLASS("SFCGALPoint",               Point_methods,               Point_ce);
     SFCGAL_REG_SUBCLASS("SFCGALLineString",          LineString_methods,          LineString_ce);
     SFCGAL_REG_SUBCLASS("SFCGALPolygon",             Polygon_methods,             Polygon_ce);
-    SFCGAL_REG_SUBCLASS("SFCGALMultiPoint",          MultiPoint_methods,          MultiPoint_ce);
-    SFCGAL_REG_SUBCLASS("SFCGALMultiLineString",     MultiLineString_methods,     MultiLineString_ce);
-    SFCGAL_REG_SUBCLASS("SFCGALMultiPolygon",        MultiPolygon_methods,        MultiPolygon_ce);
     SFCGAL_REG_SUBCLASS("SFCGALGeometryCollection",  GeometryCollection_methods,  GeometryCollection_ce);
     SFCGAL_REG_SUBCLASS("SFCGALTriangle",            Triangle_methods,            Triangle_ce);
     SFCGAL_REG_SUBCLASS("SFCGALTriangulatedSurface", TriangulatedSurface_methods, TriangulatedSurface_ce);
     SFCGAL_REG_SUBCLASS("SFCGALPolyhedralSurface",   PolyhedralSurface_methods,   PolyhedralSurface_ce);
     SFCGAL_REG_SUBCLASS("SFCGALSolid",               Solid_methods,               Solid_ce);
-    SFCGAL_REG_SUBCLASS("SFCGALMultiSolid",          NULL,                        MultiSolid_ce);
 #undef SFCGAL_REG_SUBCLASS
+
+    /* Multi* extend SFCGALGeometryCollection (per OGC SF) so they inherit
+     * addGeometry / setGeometryN.  Each defines its own ::create() that
+     * constructs the typed empty container. */
+#define SFCGAL_REG_MULTI(name, methods, var)                                 \
+    do {                                                                     \
+        INIT_CLASS_ENTRY(ce, name, methods);                                 \
+        var = zend_register_internal_class_ex(&ce, GeometryCollection_ce);   \
+        var->create_object = Geometry_create_object;                         \
+    } while (0)
+
+    SFCGAL_REG_MULTI("SFCGALMultiPoint",      MultiPoint_methods,      MultiPoint_ce);
+    SFCGAL_REG_MULTI("SFCGALMultiLineString", MultiLineString_methods, MultiLineString_ce);
+    SFCGAL_REG_MULTI("SFCGALMultiPolygon",    MultiPolygon_methods,    MultiPolygon_ce);
+    SFCGAL_REG_MULTI("SFCGALMultiSolid",      MultiSolid_methods,      MultiSolid_ce);
+#undef SFCGAL_REG_MULTI
 
     /* PreparedGeometry — separate handlers because dtor uses prepared API. */
     INIT_CLASS_ENTRY(ce, "SFCGALPreparedGeometry", PreparedGeometry_methods);
@@ -724,6 +759,11 @@ PHP_MINIT_FUNCTION(sfcgal)
     SFCGAL_REG_LCONST("TYPE_TRIANGLE",           SFCGAL_TYPE_TRIANGLE);
     SFCGAL_REG_LCONST("TYPE_SOLID",              SFCGAL_TYPE_SOLID);
     SFCGAL_REG_LCONST("TYPE_MULTISOLID",         SFCGAL_TYPE_MULTISOLID);
+
+    /* buffer3D() type-arg constants — match sfcgal_buffer3d_type_t. */
+    SFCGAL_REG_LCONST("BUFFER3D_ROUND",           SFCGAL_BUFFER3D_ROUND);
+    SFCGAL_REG_LCONST("BUFFER3D_CYLSPHERE",       SFCGAL_BUFFER3D_CYLSPHERE);
+    SFCGAL_REG_LCONST("BUFFER3D_FLAT",            SFCGAL_BUFFER3D_FLAT);
 #undef SFCGAL_REG_LCONST
 
     /* Initialize SFCGAL once per process. */
@@ -1294,6 +1334,25 @@ PHP_METHOD(Geometry, fromGEOS)
         RETURN_THROWS();
     }
     object_init_ex(&writer, wkbw_ce);
+    if (php_sfcgal_call_default_ctor(&writer) != SUCCESS) {
+        zval_ptr_dtor(&writer);
+        zend_throw_exception(Exception_ce, "GEOSWKBWriter constructor failed", 0);
+        RETURN_THROWS();
+    }
+    /* SFCGAL only accepts ISO WKB (type IDs in the 1000s for Z, 2000s
+     * for M, 3000s for ZM); GEOS defaults to EWKB (high-bit flags).
+     * Force the ISO flavor. */
+    {
+        zval flavor_method, flavor_arg, flavor_rv;
+        ZVAL_STRING(&flavor_method, "setFlavor");
+        ZVAL_LONG(&flavor_arg, 2);   /* GEOSWKB_ISO */
+        if (call_user_function(NULL, &writer, &flavor_method,
+                               &flavor_rv, 1, &flavor_arg) == SUCCESS) {
+            zval_ptr_dtor(&flavor_rv);
+        }
+        zval_ptr_dtor(&flavor_method);
+        zval_ptr_dtor(&flavor_arg);
+    }
     /* Set output dim 3 if available — best-effort. */
     {
         zval setdim_method, dim_arg, dim_rv;
@@ -1338,8 +1397,29 @@ PHP_METHOD(Geometry, toGEOS)
         RETURN_THROWS();
     }
 
+    /* SFCGAL refuses to emit WKB for Solid; GEOS rejects WKB types 15/16
+     * (PolyhedralSurface / TriangulatedSurface).  For those, decompose to
+     * MultiPolygon Z of all face polygons before serialising — lossy on
+     * shell / solid identity but the only OGC-portable representation. */
+    sfcgal_geometry_type_t t = sfcgal_geometry_type_id(g);
+    sfcgal_geometry_t *to_serialize = g;
+    sfcgal_geometry_t *decomposed = NULL;
+    if (t == SFCGAL_TYPE_SOLID
+     || t == SFCGAL_TYPE_POLYHEDRALSURFACE
+     || t == SFCGAL_TYPE_TRIANGULATEDSURFACE
+     || t == SFCGAL_TYPE_MULTISOLID
+     || t == SFCGAL_TYPE_TRIANGLE) {
+        decomposed = build_face_multipolygon(g);
+        if (EG(exception)) {
+            if (decomposed) sfcgal_geometry_delete(decomposed);
+            RETURN_THROWS();
+        }
+        to_serialize = decomposed;
+    }
+
     char *buf = NULL; size_t len = 0;
-    sfcgal_geometry_as_wkb(g, &buf, &len);
+    sfcgal_geometry_as_wkb(to_serialize, &buf, &len);
+    if (decomposed) sfcgal_geometry_delete(decomposed);
     if (EG(exception)) {
         if (buf) free(buf);
         RETURN_THROWS();
@@ -1351,6 +1431,12 @@ PHP_METHOD(Geometry, toGEOS)
 
     zval reader, args[1], rv, method;
     object_init_ex(&reader, wkbr_ce);
+    if (php_sfcgal_call_default_ctor(&reader) != SUCCESS) {
+        zval_ptr_dtor(&reader);
+        free(buf);
+        zend_throw_exception(Exception_ce, "GEOSWKBReader constructor failed", 0);
+        RETURN_THROWS();
+    }
     ZVAL_STRINGL(&args[0], buf, len);
     free(buf);
     ZVAL_STRING(&method, "read");
@@ -2314,4 +2400,115 @@ PHP_METHOD(PreparedGeometry, fromBinary)
     sfcgal_prepared_geometry_t *p = sfcgal_io_read_binary_prepared(s, s_len);
     if (EG(exception)) RETURN_THROWS();
     if (php_sfcgal_wrap_prepared(return_value, p) == FAILURE) RETURN_THROWS();
+}
+
+/* ============================================================
+ * decomposeToFaces — flatten any 3D-surface geometry to a
+ * MultiPolygon Z whose members are the individual face polygons.
+ *
+ * SFCGAL refuses to emit WKB for SOLID, and GEOS does not understand
+ * WKB type 15 (PolyhedralSurface) or type 16 (TriangulatedSurface).
+ * MultiPolygon Z (WKB type 6 with hasZ) is the lowest-common-denominator
+ * carrier — GEOS reads it cleanly, and from a SFCGAL perspective each
+ * polygon-face simply becomes a member of the MP.
+ *
+ * Conversion table:
+ *   Solid              → MP of every patch in every shell
+ *   PolyhedralSurface  → MP of every patch
+ *   TriangulatedSurface→ MP of every triangle (each promoted to a
+ *                        Polygon with the closed exterior ring)
+ *   MultiSolid         → MP of every patch in every shell of every solid
+ *   Polygon            → MP containing the polygon
+ *   MultiPolygon       → clone (already a MP)
+ *   GeometryCollection → MP of any Polygon / *Surface / Solid members,
+ *                        flattened recursively; non-areal members are
+ *                        skipped (GEOS handles them via the WKB path).
+ *
+ * Returns NULL on malloc failure (caller throws).
+ * ============================================================ */
+
+/* Convert a Triangle to a freshly-allocated Polygon (caller owns). */
+static sfcgal_geometry_t *
+triangle_to_polygon(const sfcgal_geometry_t *tri)
+{
+    sfcgal_geometry_t *ring = sfcgal_linestring_create();
+    for (int i = 0; i < 4; i++) {
+        const sfcgal_geometry_t *v = sfcgal_triangle_vertex(tri, i);
+        sfcgal_linestring_add_point(ring, sfcgal_geometry_clone(v));
+    }
+    return sfcgal_polygon_create_from_exterior_ring(ring);
+}
+
+/* Append every face polygon of `g` to `mp`. Recurses on collections. */
+static void
+append_faces_to_mp(sfcgal_geometry_t *mp, const sfcgal_geometry_t *g)
+{
+    if (!g) return;
+    sfcgal_geometry_type_t t = sfcgal_geometry_type_id(g);
+    size_t n;
+    switch (t) {
+    case SFCGAL_TYPE_POLYGON:
+        sfcgal_geometry_collection_add_geometry(mp, sfcgal_geometry_clone(g));
+        return;
+    case SFCGAL_TYPE_TRIANGLE:
+        sfcgal_geometry_collection_add_geometry(mp, triangle_to_polygon(g));
+        return;
+    case SFCGAL_TYPE_POLYHEDRALSURFACE:
+        n = sfcgal_polyhedral_surface_num_patches(g);
+        for (size_t i = 0; i < n; i++) {
+            sfcgal_geometry_collection_add_geometry(
+                mp, sfcgal_geometry_clone(
+                    sfcgal_polyhedral_surface_patch_n(g, i)));
+        }
+        return;
+    case SFCGAL_TYPE_TRIANGULATEDSURFACE:
+        n = sfcgal_triangulated_surface_num_patches(g);
+        for (size_t i = 0; i < n; i++) {
+            sfcgal_geometry_collection_add_geometry(
+                mp, triangle_to_polygon(
+                    sfcgal_triangulated_surface_patch_n(g, i)));
+        }
+        return;
+    case SFCGAL_TYPE_SOLID:
+        n = sfcgal_solid_num_shells(g);
+        for (size_t i = 0; i < n; i++) {
+            append_faces_to_mp(mp, sfcgal_solid_shell_n(g, i));
+        }
+        return;
+    case SFCGAL_TYPE_MULTIPOLYGON:
+    case SFCGAL_TYPE_MULTISOLID:
+    case SFCGAL_TYPE_GEOMETRYCOLLECTION:
+        n = sfcgal_geometry_num_geometries(g);
+        for (size_t i = 0; i < n; i++) {
+            append_faces_to_mp(mp, sfcgal_geometry_collection_geometry_n(g, i));
+        }
+        return;
+    default:
+        /* Non-areal types (Point, LineString, MultiPoint, …) are dropped
+         * by design — they have no face contribution.  Caller should
+         * use the regular WKB path for those. */
+        return;
+    }
+}
+
+/* Build a MultiPolygon from the faces of `g`. Caller owns. */
+static sfcgal_geometry_t *
+build_face_multipolygon(const sfcgal_geometry_t *g)
+{
+    sfcgal_geometry_t *mp = sfcgal_multi_polygon_create();
+    append_faces_to_mp(mp, g);
+    return mp;
+}
+
+PHP_METHOD(Geometry, decomposeToFaces)
+{
+    if (zend_parse_parameters_none() == FAILURE) RETURN_THROWS();
+    sfcgal_geometry_t *g = php_sfcgal_get_self(getThis());
+    if (!g) RETURN_THROWS();
+    sfcgal_geometry_t *mp = build_face_multipolygon(g);
+    if (EG(exception)) {
+        if (mp) sfcgal_geometry_delete(mp);
+        RETURN_THROWS();
+    }
+    if (php_sfcgal_wrap_geometry(return_value, mp) == FAILURE) RETURN_THROWS();
 }

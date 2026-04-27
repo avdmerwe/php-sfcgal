@@ -1,3 +1,23 @@
+php-sfcgal (1.0.1+git20260427-1~jammy1) jammy; urgency=medium
+
+  * Gap-fix release based on Geodesy-side feedback.
+    - SFCGALGeometry::BUFFER3D_{ROUND,CYLSPHERE,FLAT} class constants.
+    - Multi* now extend SFCGALGeometryCollection (per OGC SF),
+      inheriting addGeometry() / setGeometryN().  Fixes the
+      "addGeometry not found on MultiPolygon" issue.
+    - SFCGALMultiSolid::create() registered.
+    - New SFCGALGeometry::decomposeToFaces(): SFCGALMultiPolygon —
+      flatten Solid / *Surface / MultiSolid / Triangle to face
+      polygons.  Used internally by toGEOS() to bridge 3D-only types
+      that SFCGAL/GEOS cannot WKB-roundtrip natively.
+    - fromGEOS() forces ISO WKB flavor on the internal GEOSWKBWriter
+      so SFCGAL parses what GEOS emits.
+    - Internal: explicit __construct invocation on GEOSWKB{Reader,
+      Writer} proxy objects (relay setup happens in the constructor).
+    - tests/009_BridgeAndDecompose.phpt regression coverage.
+
+ -- Abraham van der Merwe <abz@frogfoot.com>  Mon, 27 Apr 2026 23:30:00 +0200
+
 php-sfcgal (1.0.0+git20260427-1~jammy1) jammy; urgency=medium
 
   * Initial release: PHP bindings for SFCGAL 2.2.0.

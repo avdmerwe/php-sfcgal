@@ -592,6 +592,10 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_Solid_addInteriorShell, 0, 0, 1)
     ZEND_ARG_INFO(0, shell)
 ZEND_END_ARG_INFO()
 
+/* decomposeToFaces — flatten Solid / *Surface to MultiPolygon Z */
+ZEND_BEGIN_ARG_INFO_EX(arginfo_Geometry_decomposeToFaces, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
 /* PreparedGeometry binary I/O */
 ZEND_BEGIN_ARG_INFO_EX(arginfo_PreparedGeometry_setGeometry, 0, 0, 1)
     ZEND_ARG_INFO(0, geometry)

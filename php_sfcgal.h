@@ -8,7 +8,7 @@
 #ifndef PHP_SFCGAL_H
 #define PHP_SFCGAL_H
 
-#define PHP_SFCGAL_VERSION  "1.0.0"
+#define PHP_SFCGAL_VERSION  "1.0.1"
 #define PHP_SFCGAL_EXTNAME  "sfcgal"
 
 #ifdef HAVE_CONFIG_H

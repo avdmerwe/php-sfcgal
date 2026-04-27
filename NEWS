@@ -1,6 +1,29 @@
 php-sfcgal NEWS
 ===============
 
+1.0.1 — gap-fix release
+  - SFCGALGeometry::BUFFER3D_{ROUND,CYLSPHERE,FLAT} class constants
+    (mirror sfcgal_buffer3d_type_t).
+  - SFCGALMultiPoint / MultiLineString / MultiPolygon / MultiSolid now
+    extend SFCGALGeometryCollection (per OGC SF), so they inherit
+    addGeometry() / setGeometryN(). Fixes the "addGeometry not found
+    on MultiPolygon" oversight.
+  - SFCGALMultiSolid::create() factory now actually registered.
+  - New: SFCGALGeometry::decomposeToFaces(): SFCGALMultiPolygon —
+    flatten Solid / PolyhedralSurface / TriangulatedSurface /
+    MultiSolid / Triangle to a MultiPolygon Z of face polygons.
+  - toGEOS() auto-decomposes 3D-only types via decomposeToFaces() then
+    emits MultiPolygon Z WKB. Fixes "Solid asWkb fails" upstream block
+    and "GEOS Unknown WKB type 15" PolyhedralSurface block.
+  - fromGEOS() now sets GEOSWKBWriter::setFlavor(GEOSWKB_ISO) on the
+    internal writer, so the WKB SFCGAL receives is in the format it
+    parses (not EWKB).
+  - Internal: explicit __construct invocation on the GEOSWKBWriter /
+    GEOSWKBReader proxy objects (php-geos's constructors initialise the
+    relay; object_init_ex alone is not enough).
+  - tests/009_BridgeAndDecompose.phpt — regression coverage for all of
+    the above. Suite now 10/10 green.
+
 1.0.0 — initial release (target: 2026-Q2)
   - PHP bindings for SFCGAL 2.2.0 ISO 19107:2013 / OGC SFA 1.2 3D operations
   - SFCGALGeometry hierarchy (flat global names, matching php-geos style):
