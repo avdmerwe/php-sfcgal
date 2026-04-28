@@ -1,3 +1,21 @@
+php-sfcgal (1.0.2+git20260428-2~jammy1) jammy; urgency=medium
+
+  * Packaging fix: strip RUNPATH from sfcgal.so.
+    - The 1.0.2-1 build linked against an extracted-staging libsfcgal2
+      (/tmp/sfcgal-deb-extract/...) and libtool / sfcgal-config baked
+      that path into the .so as RUNPATH, which takes precedence over
+      the system loader path.  Result: the installed extension kept
+      loading the unpatched 2.2.0-1build1~jammy1 libSFCGAL even after
+      the user upgraded to 2.2.0-1build1~jammy2, leaving Bug 1
+      (distance3D between Solids returns 0) visibly unfixed.
+    - debian/rules now runs `chrpath -d` on the installed sfcgal.so so
+      runtime resolution falls back to the system loader cache + the
+      explicit Depends: libsfcgal2 (>= 2.2.0-1build1~jammy2).
+    - Build-Depends: chrpath added.
+    - No source changes; binding code is identical to 1.0.2-1.
+
+ -- Abraham van der Merwe <abz@frogfoot.com>  Tue, 28 Apr 2026 23:00:00 +0200
+
 php-sfcgal (1.0.2+git20260428-1~jammy1) jammy; urgency=medium
 
   * Bug-fix release based on Geodesy-side BUGS.md.

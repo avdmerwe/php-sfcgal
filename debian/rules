@@ -21,6 +21,13 @@ override_dh_auto_test:
 override_dh_auto_install:
 	# phpize uses INSTALL_ROOT instead of DESTDIR.
 	$(MAKE) install INSTALL_ROOT=$(CURDIR)/debian/php-sfcgal
+	# Strip any build-staging RUNPATH (e.g. /tmp/sfcgal-deb-extract/...)
+	# that libtool / sfcgal-config baked in when building against an
+	# extracted .deb prefix. The runtime resolves libSFCGAL.so.2 via the
+	# system loader cache plus the explicit Depends: libsfcgal2.
+	for so in $(CURDIR)/debian/php-sfcgal/usr/lib/php/*/sfcgal.so; do \
+	    chrpath -d $$so || true; \
+	done
 
 # When building before libsfcgal2 is installed system-wide (e.g. from a fresh
 # extracted .deb), dh_shlibdeps cannot resolve libSFCGAL.so.2 to a package.

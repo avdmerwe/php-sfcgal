@@ -7,6 +7,7 @@ Build-Depends: debhelper-compat (= 13),
                libsfcgal-dev (>= 2.2.0),
                libcgal-dev (>= 5.6),
                php-dev,
+               chrpath,
 Standards-Version: 4.7.0
 Homepage: https://github.com/avdmerwe/php-sfcgal
 Rules-Requires-Root: no
