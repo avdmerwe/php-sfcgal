@@ -1,6 +1,29 @@
 php-sfcgal NEWS
 ===============
 
+1.0.2 — bug-fix release based on Geodesy-side BUGS.md
+  - Bug 1 (distance3D returns 0 between Solids and other 3D types):
+    upstream libsfcgal 2.2.0 issue — distance3D dispatch calls the 2D
+    intersects() (not intersects3D()) on six paths in
+    algorithm/distance3d.cpp, returning 0.0 whenever the 2D
+    projections overlap regardless of actual 3D distance.  Fixed
+    properly in libsfcgal via fix-distance3d-2d-shortcircuit.patch
+    (six one-line changes), shipped in libsfcgal2_2.2.0-1build1~jammy2.
+    The php-sfcgal binding's distance3D() is a simple 12-line
+    wrapper; no fan-triangulation hacks.  Patch will be forwarded
+    upstream to gitlab.com/sfcgal/SFCGAL.
+  - Bug 2 (forceRHR / forceLHR are no-ops): binding bug — these C-API
+    functions take const and return a new geometry; 1.0.1 wrapped
+    them as void in-place mutators, leaking the clone.  Fix: return
+    a new SFCGALGeometry like rotate* / scale* / translate*.
+    BEHAVIOUR CHANGE: $p->forceRHR() now returns the new geometry
+    rather than mutating $p.
+  - Bug 3 (extrudePolygonStraightSkeleton returns PolyhedralSurface
+    instead of documented Solid): wrap upstream result with
+    sfcgal_geometry_make_solid so the binding's documented return
+    type is honoured.  $house->volume() is now non-zero.
+  - tests/010_BugFixes.phpt — regression coverage.  Suite 11/11 green.
+
 1.0.1 — gap-fix release
   - SFCGALGeometry::BUFFER3D_{ROUND,CYLSPHERE,FLAT} class constants
     (mirror sfcgal_buffer3d_type_t).

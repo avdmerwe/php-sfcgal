@@ -1112,7 +1112,25 @@ PHP_METHOD(Geometry, extrudePolygonStraightSkeleton)
     sfcgal_geometry_t *r =
         sfcgal_geometry_extrude_polygon_straight_skeleton(g, building_h, roof_h);
     if (EG(exception)) RETURN_THROWS();
-    if (php_sfcgal_wrap_geometry(return_value, r) == FAILURE) RETURN_THROWS();
+    if (!r) {
+        zend_throw_exception(Exception_ce,
+            "extrudePolygonStraightSkeleton returned NULL", 0);
+        RETURN_THROWS();
+    }
+    /* Upstream returns a PolyhedralSurface, but the operation semantically
+     * produces a Solid (a closed building with a roof — non-zero volume).
+     * Wrap with makeSolid so the binding's documented return type
+     * (SFCGALSolid) is honoured.  makeSolid validates that the surface is
+     * a closed manifold; if it isn't, propagate the original surface. */
+    sfcgal_geometry_t *solid = sfcgal_geometry_make_solid(r);
+    sfcgal_geometry_delete(r);
+    if (EG(exception)) RETURN_THROWS();
+    if (!solid) {
+        zend_throw_exception(Exception_ce,
+            "extrudePolygonStraightSkeleton: makeSolid wrap failed", 0);
+        RETURN_THROWS();
+    }
+    if (php_sfcgal_wrap_geometry(return_value, solid) == FAILURE) RETURN_THROWS();
 }
 
 PHP_METHOD(Geometry, alphaShapes)
@@ -1233,9 +1251,33 @@ PHP_METHOD(Geometry, forceM)
 SFCGAL_INPLACE_VOID(dropZ,    sfcgal_geometry_drop_z)
 SFCGAL_INPLACE_VOID(dropM,    sfcgal_geometry_drop_m)
 SFCGAL_INPLACE_VOID(swapXY,   sfcgal_geometry_swap_xy)
-SFCGAL_INPLACE_VOID(forceLHR, sfcgal_geometry_force_lhr)
-SFCGAL_INPLACE_VOID(forceRHR, sfcgal_geometry_force_rhr)
 #undef SFCGAL_INPLACE_VOID
+
+/* sfcgal_geometry_force_lhr / _force_rhr take a const pointer and
+ * return a freshly cloned geometry — they are NOT in-place mutators
+ * (despite the name).  In php-sfcgal 1.0.1 these were mis-wrapped via
+ * SFCGAL_INPLACE_VOID, which discarded the return value, leaked the
+ * clone, and produced a no-op visible to callers.  Bug fix in 1.0.2:
+ * wrap the returned geometry like rotate* / scale* / translate*. */
+PHP_METHOD(Geometry, forceLHR)
+{
+    if (zend_parse_parameters_none() == FAILURE) RETURN_THROWS();
+    sfcgal_geometry_t *g = php_sfcgal_get_self(getThis());
+    if (!g) RETURN_THROWS();
+    sfcgal_geometry_t *r = sfcgal_geometry_force_lhr(g);
+    if (EG(exception)) RETURN_THROWS();
+    if (php_sfcgal_wrap_geometry(return_value, r) == FAILURE) RETURN_THROWS();
+}
+
+PHP_METHOD(Geometry, forceRHR)
+{
+    if (zend_parse_parameters_none() == FAILURE) RETURN_THROWS();
+    sfcgal_geometry_t *g = php_sfcgal_get_self(getThis());
+    if (!g) RETURN_THROWS();
+    sfcgal_geometry_t *r = sfcgal_geometry_force_rhr(g);
+    if (EG(exception)) RETURN_THROWS();
+    if (php_sfcgal_wrap_geometry(return_value, r) == FAILURE) RETURN_THROWS();
+}
 
 PHP_METHOD(Geometry, round)
 {

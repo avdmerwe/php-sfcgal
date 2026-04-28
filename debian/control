@@ -17,7 +17,7 @@ Section: php
 Depends: ${php:Depends},
          ${shlibs:Depends},
          ${misc:Depends},
-         libsfcgal2 (>= 2.2.0)
+         libsfcgal2 (>= 2.2.0-1build1~jammy2)
 Recommends: php-geos
 Description: SFCGAL bindings for PHP — ISO 19107 / OGC SFA 1.2 3D
  SFCGAL is a C++ wrapper library around CGAL that supports

@@ -47,10 +47,12 @@ tests/*.sh
 
 # Debian build outputs (live in parent dir)
 debian/.debhelper/
+debian/autoreconf.*
 debian/debhelper-build-stamp
 debian/files
 debian/php-sfcgal/
 debian/php-sfcgal.substvars
+debian/php-sfcgal.*.debhelper
 debian/tmp/
 debian/*.log
 
